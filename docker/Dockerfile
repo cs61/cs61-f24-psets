@@ -88,7 +88,7 @@ RUN useradd -m -s /bin/bash cs61-user &&\
  echo "cs61-user ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/cs61-init
 
 # create binary reporting version of dockerfile
-RUN (echo '#\!/bin/sh'; echo 'echo 17') > /usr/bin/cs61-docker-version; chmod ugo+rx,u+w,go-w /usr/bin/cs61-docker-version
+RUN (echo '#\!/bin/sh'; echo 'echo 18') > /usr/bin/cs61-docker-version; chmod ugo+rx,u+w,go-w /usr/bin/cs61-docker-version
 
 # git build arguments
 ARG USER=CS61\ User
@@ -98,6 +98,7 @@ ARG EMAIL=nobody@example.com
 USER cs61-user
 RUN git config --global user.name "${USER}" &&\
  git config --global user.email "${EMAIL}" &&\
+ git config --global safe.directory "*" &&\
  (echo "(custom-set-variables"; echo " '(c-basic-offset 4)"; echo " '(indent-tabs-mode nil))") > ~/.emacs &&\
  (echo "set expandtab"; echo "set shiftwidth=4"; echo "set softtabstop=4") > ~/.vimrc &&\
  cat /dev/null > ~/.bash_profile &&\
