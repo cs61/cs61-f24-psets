@@ -7,6 +7,7 @@ ENV TZ=${TZ}
 # include manual pages and documentation
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update &&\
+ apt-get -y install unminimize &&\
  yes | unminimize
 
 # install GCC-related packages
@@ -88,7 +89,7 @@ RUN useradd -m -s /bin/bash cs61-user &&\
  echo "cs61-user ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/cs61-init
 
 # create binary reporting version of dockerfile
-RUN (echo '#\!/bin/sh'; echo 'echo 18') > /usr/bin/cs61-docker-version; chmod ugo+rx,u+w,go-w /usr/bin/cs61-docker-version
+RUN (echo '#\!/bin/sh'; echo 'echo 19') > /usr/bin/cs61-docker-version; chmod ugo+rx,u+w,go-w /usr/bin/cs61-docker-version
 
 # git build arguments
 ARG USER=CS61\ User
