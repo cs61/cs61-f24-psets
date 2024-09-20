@@ -18,8 +18,9 @@ while test "$#" -ne 0; do
     elif test "$1" = "-x" -o "$1" = "--x86-64" -o "$1" = "--x86_64" -o "$1" = "--amd64"; then
         platform=linux/amd64
         shift
-    elif expr "$1" : "--progress=.*"; then
+    elif expr "$1" : "--progress=.*" "|" "$1" = "--no-cache" > /dev/null; then
         args+=( "$1" )
+        shift
     else
         armtext=
         if test "$arch" = "arm64" -o "$arch" = "aarch64"; then
