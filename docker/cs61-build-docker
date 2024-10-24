@@ -4,8 +4,14 @@ cd `dirname $0`
 
 arch="`arch`"
 tag=
+uid=
 platform=
 args=()
+
+# Except on Darwin, adopt current UID by default.
+if test "`uname`" != Darwin; then
+    uid="`id -u`"
+fi
 
 usage () {
     armtext=
@@ -33,13 +39,13 @@ while test "$#" -ne 0; do
         shift
     elif test "$1" = "-u" -o "$1" = "--user"; then
         if expr "$2" : "[0-9][0-9]*$" >/dev/null; then
-            args+=( --build-arg UID=$2 )
+            uid="$2"
             shift 2
         else
             usage
         fi
     elif expr "$1" : "-u[0-9]*$" "|" "$1" : "--user=[0-9][0-9]*" >/dev/null; then
-        args+=( --build-arg UID="`echo "$1" | sed 's/^[^0-9]*//'`" )
+        uid="`echo "$1" | sed 's/^[^0-9]*//'`"
         shift
     elif test "$1" = "-t" -o "$1" = "--tag"; then
         if expr "$2" : "..*$" >/dev/null; then
@@ -49,7 +55,7 @@ while test "$#" -ne 0; do
             usage
         fi
     elif expr "$1" : "-t..*$" "|" "$1" : "--tag=..*" >/dev/null; then
-        tag="`echo "$1" | sed 's/^-t//;s/^--tag=//'`"
+        tag="`echo "$1" | sed 's/^--tag=//;s/^-t//'`"
         shift
     else
         usage
@@ -66,6 +72,10 @@ if test -z "$tag" -a "$platform" = linux/arm64; then
     tag=cs61:arm64
 elif test -z "$tag"; then
     tag=cs61:latest
+fi
+
+if test -n "$uid"; then
+    args+=( --build-arg UID="$uid" )
 fi
 
 if test $platform = linux/arm64; then
