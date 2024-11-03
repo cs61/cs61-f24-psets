@@ -100,7 +100,7 @@ struct shell_tokenizer {
 private:
     const char* _s;
     const char* _end;
-    unsigned short _type;
+    short _type;
     bool _quoted;
     unsigned _len;
 
