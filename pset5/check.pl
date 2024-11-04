@@ -71,6 +71,7 @@ sub CMD_MAX_TIME ()       { "CMD_MAX_TIME" }
 sub CMD_TIME_LIMIT ()     { "CMD_TIME_LIMIT" }
 sub CMD_FILE ()           { "CMD_FILE" }
 sub CMD_SKIP ()           { "CMD_SKIP" }
+sub CMD_KILL ()           { "CMD_KILL" }
 
 @tests = (
 # Execute
@@ -246,7 +247,8 @@ sub CMD_SKIP ()           { "CMD_SKIP" }
     [ 'Test PIPE5',
       'pipeline running in parallel',
       'yes | head -n 5',
-      'y y y y y' ],
+      'y y y y y',
+      CMD_TIME_LIMIT => 2 ],
 
     [ 'Test PIPE6',
       'three-command pipeline',
@@ -387,9 +389,9 @@ sub CMD_SKIP ()           { "CMD_SKIP" }
 
     [ 'Test BG8',
       'second background does not wait',
-      'sleep 0.2 & sleep 0.2 & echo OK',
+      'sleep 0.5 & sleep 0.5 & echo OK',
       'OK',
-      CMD_MAX_TIME => 0.1 ],
+      CMD_MAX_TIME => 0.2 ],
 
     [ 'Test BG9',
       'second background command not creating extra shells',
@@ -718,7 +720,7 @@ sub run_sh61_pipe ($$;$) {
     my ($text, $fd, $size) = @_;
     my ($n, $buf) = (0, "");
     return $text if !defined($fd);
-    while ((!defined($size) || length($text) <= $size)
+    while ((!defined($size) || length($text) <= $size + 8192)
            && defined(($n = POSIX::read($fd, $buf, 8192)))
            && $n > 0) {
         $text .= substr($buf, 0, $n);
@@ -853,7 +855,8 @@ sub run_sh61 ($;%) {
         && $opt{"delay"} > 0) {
         Time::HiRes::usleep($opt{"delay"} * 1e6);
     }
-    if (exists($opt{"nokill"})) {
+    if (exists($opt{"nokill"})
+        && $opt{"nokill"} > 0) {
         $answer->{"pgrp"} = $run61_pgrp;
     } else {
         kill -9, $run61_pgrp;
@@ -995,7 +998,9 @@ sub run (@) {
     my($cmd) = "../$sh -q" . ($opts{CMD_SCRIPT_FILE} ? " $tempfile" : "");
     my($stdin) = $opts{CMD_SCRIPT_FILE} ? "/dev/stdin" : $tempfile;
     my($time_limit) = $opts{CMD_TIME_LIMIT} ? $opts{CMD_TIME_LIMIT} : 10;
-    my($info) = run_sh61($cmd, "stdin" => $stdin, "stdout" => $outfile, "time_limit" => $time_limit, "size_limit" => 1000, "dir" => "out", "nokill" => 1, "delay" => 0.05, "int_delay" => $opts{CMD_INT_DELAY});
+    my($want_kill) = exists($opts{CMD_KILL}) ? $opts{CMD_KILL} : 0;
+    my($size_limit) = 1000;
+    my($info) = run_sh61($cmd, "stdin" => $stdin, "stdout" => $outfile, "time_limit" => $time_limit, "size_limit" => $size_limit, "dir" => "out", "nokill" => !$want_kill, "delay" => 0.05, "int_delay" => $opts{CMD_INT_DELAY});
 
     if ($opts{CMD_CLEANUP}) {
         if ($opts{CMD_CAREFUL_CLEANUP}) {
@@ -1025,7 +1030,11 @@ sub run (@) {
         $ok = 0;
         $prefix = "  ";
     }
-    $result = `cat out/$outfile`;
+    $result = "";
+    if (open(PR, "<", "out/$outfile")) {
+        $result = run_sh61_pipe("", fileno(PR), min($size_limit * 8, 8192));
+        close PR;
+    }
     # sanitization errors
     my($sanitizera, $sanitizerb) = ("", "");
     if ($result =~ /\A([\s\S]*?)^(===+\s+==\d+==\s*ERROR[\s\S]*)\z/m) {
