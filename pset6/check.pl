@@ -470,6 +470,8 @@ while (@ARGV) {
 
 open(OUT, ">&STDOUT");
 
+set_param("SAN", 0);
+
 if (testid_runnable("FTX1")) {
     print OUT "\n${Cyan}Test FTX1: ./ftxxfer check...${Off}\n";
     run_one_check("./ftxxfer", "./diff-ftxdb.pl");
